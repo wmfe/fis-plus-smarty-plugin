@@ -2,12 +2,17 @@
 function smarty_compiler_html($arrParams,  $smarty){
     $strResourceApiPath = preg_replace('/[\\/\\\\]+/', '/', dirname(__FILE__) . '/FISResource.class.php');
     $strFramework = $arrParams['framework'];
+    $openResourceMonitor=$arrParams['open_res_monitor'];
     unset($arrParams['framework']);
+    unset($arrParams['open_res_monitor']);
     $strAttr = '';
     $strCode  = '<?php ';
     if (isset($strFramework)) {
         $strCode .= 'if(!class_exists(\'FISResource\', false)){require_once(\'' . $strResourceApiPath . '\');}';
         $strCode .= 'FISResource::setFramework(FISResource::getUri('.$strFramework.', $_smarty_tpl->smarty));';
+    }
+    if(isset($openResourceMonitor)){
+        $strCode .= 'FISResource::setOpenResourceMonitor(true);';
     }
     $strCode .= ' ?>';
 

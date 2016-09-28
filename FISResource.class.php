@@ -17,6 +17,9 @@ class FISResource {
 
     public static $framework = null;
 
+    //是否开启资源监控（成功or 失败or 其他）
+    public static $openResourceMonitor=false;
+
     //记录{%script%}, {%style%}的id属性
     public static $cp = null;
 
@@ -32,7 +35,32 @@ class FISResource {
         self::$arrRequireAsyncCollection = array();
         self::$arrScriptPool = array();
         self::$framework  = null;
+        self::$openResourceMonitor=false;
     }
+
+    /**
+     * 资源请求监控默认处理方法
+     */
+    public static function defaultResourceMonitorHook(){
+        if(self::$openResourceMonitor){
+            return '<script type="text/javascript">' .
+                   'var _resourceLoadSuccHook=_resourceLoadSuccHook || function(){};' .
+                   'var _resourceLoadFailHook=_resourceLoadFailHook || function(){};' .
+                   '</script>'.PHP_EOL;
+        }
+        return '';
+    }
+
+    /**
+     * 注入监控处理绑定
+     */
+    public static function resourceMonitorHookBinding(){
+        if(self::$openResourceMonitor){
+            return ' onload="_resourceLoadSuccHook(this)" onerror="_resourceLoadFailHook(this)" crossorigin ';
+        }
+        return '';
+    }
+
 
     public static function addStatic($src, $typ) {
         if (!$typ) {
@@ -103,6 +131,10 @@ class FISResource {
         self::$framework = $strFramework;
     }
 
+    public static function setOpenResourceMonitor($isOpen){
+        self::$openResourceMonitor=$isOpen;
+    }
+
     //返回静态资源uri，有包的时候，返回包的uri
     public static function getUri($strName, $smarty) {
         $intPos = strpos($strName, ':');
@@ -136,7 +168,7 @@ class FISResource {
         $loadModJs = (self::$framework && (isset(self::$arrStaticCollection['js']) || $resourceMap));
         //require.resourceMap要在mod.js加载以后执行
         if ($loadModJs) {
-            $html .= '<script type="text/javascript" src="' . self::$framework . '"></script>' . PHP_EOL;
+            $html .= '<script type="text/javascript" src="' . self::$framework . '"' . self::resourceMonitorHookBinding() . '></script>' . PHP_EOL;
         }
         if ($resourceMap) {
             $html .= '<script type="text/javascript">';
@@ -156,7 +188,7 @@ class FISResource {
                     if ($uri === self::$framework) {
                         continue;
                     }
-                    $html .= '<script type="text/javascript" src="' . $uri . '"></script>' . PHP_EOL;
+                    $html .= '<script type="text/javascript" src="' . $uri . '"' . self::resourceMonitorHookBinding() . '></script>' . PHP_EOL;
                 }
             }
         } else if($type === 'css'){
